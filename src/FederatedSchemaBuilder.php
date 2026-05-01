@@ -32,7 +32,7 @@ class FederatedSchemaBuilder
         return new self($schema);
     }
 
-    public function withReferenceResolver(string $typeName, string $fields, callable $resolver): self
+    public function withReferenceResolver(string $typeName, string|array $fields, callable $resolver): self
     {
         $type = $this->schema->getType($typeName);
         if (!$type instanceof ObjectType) {
@@ -40,12 +40,13 @@ class FederatedSchemaBuilder
                 "Type '{$typeName}' not found in schema or is not an ObjectType.",
             );
         }
-        $this->entityConfigs[$typeName] = new EntityConfig($typeName, $fields, $type);
+        $keyFieldSets = is_array($fields) ? $fields : [$fields];
+        $this->entityConfigs[$typeName] = new EntityConfig($typeName, $keyFieldSets, $type);
         $this->registry->register($typeName, $resolver);
         return $this;
     }
 
-    public function withEntityKey(string $typeName, string $fields): self
+    public function withEntityKey(string $typeName, string|array $fields, bool $resolvable = true): self
     {
         $type = $this->schema->getType($typeName);
         if (!$type instanceof ObjectType) {
@@ -53,7 +54,8 @@ class FederatedSchemaBuilder
                 "Type '{$typeName}' not found in schema or is not an ObjectType.",
             );
         }
-        $this->entityConfigs[$typeName] = new EntityConfig($typeName, $fields, $type);
+        $keyFieldSets = is_array($fields) ? $fields : [$fields];
+        $this->entityConfigs[$typeName] = new EntityConfig($typeName, $keyFieldSets, $type, $resolvable);
         return $this;
     }
 

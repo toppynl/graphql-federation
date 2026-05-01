@@ -12,8 +12,10 @@ class EntityUnionBuilder
      */
     public static function build(array $configs): UnionType
     {
+        $resolvableConfigs = array_filter($configs, fn (EntityConfig $c) => $c->resolvable);
+
         $typeMap = [];
-        foreach ($configs as $config) {
+        foreach ($resolvableConfigs as $config) {
             $typeMap[$config->typeName] = $config->type;
         }
 

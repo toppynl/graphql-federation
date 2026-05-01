@@ -29,10 +29,15 @@ class FederatedSchemaPrinter
 
         // Inject @key annotations on entity types
         foreach ($fedSchema->entityConfigs as $config) {
-            $annotation = sprintf('@key(fields: "%s")', $config->fields);
+            $annotations = '';
+            foreach ($config->keyFieldSets as $fieldSet) {
+                $resolvableArg = $config->resolvable ? '' : ', resolvable: false';
+                $annotations .= sprintf('@key(fields: "%s"%s) ', $fieldSet, $resolvableArg);
+            }
+            $annotations = rtrim($annotations);
             $sdl = preg_replace(
                 '/^(type\s+' . preg_quote($config->typeName, '/') . '\b[^{]*)\{/m',
-                '$1' . $annotation . ' {',
+                '$1' . $annotations . ' {',
                 $sdl,
             );
         }

@@ -16,8 +16,8 @@ class EntityUnionBuilderTest extends TestCase
         $order   = new ObjectType(['name' => 'Order',   'fields' => ['id' => Type::string()]]);
 
         $configs = [
-            new EntityConfig('Product', 'id', $product),
-            new EntityConfig('Order',   'id', $order),
+            new EntityConfig('Product', ['id'], $product),
+            new EntityConfig('Order',   ['id'], $order),
         ];
 
         $union = EntityUnionBuilder::build($configs);
@@ -30,7 +30,7 @@ class EntityUnionBuilderTest extends TestCase
     public function test_resolveType_returns_correct_object_type(): void
     {
         $product = new ObjectType(['name' => 'Product', 'fields' => ['id' => Type::string()]]);
-        $configs = [new EntityConfig('Product', 'id', $product)];
+        $configs = [new EntityConfig('Product', ['id'], $product)];
         $union   = EntityUnionBuilder::build($configs);
 
         /** @var callable $resolver */
@@ -42,12 +42,26 @@ class EntityUnionBuilderTest extends TestCase
     public function test_resolveType_returns_null_for_unknown_typename(): void
     {
         $product = new ObjectType(['name' => 'Product', 'fields' => ['id' => Type::string()]]);
-        $configs = [new EntityConfig('Product', 'id', $product)];
+        $configs = [new EntityConfig('Product', ['id'], $product)];
         $union   = EntityUnionBuilder::build($configs);
 
         /** @var callable $resolver */
         $resolver = $union->config['resolveType'];
         $resolved = $resolver(['__typename' => 'Unknown'], null, null);
         $this->assertNull($resolved);
+    }
+
+    public function test_non_resolvable_types_excluded_from_union(): void
+    {
+        $product = new ObjectType(['name' => 'Product', 'fields' => ['id' => Type::string()]]);
+        $order   = new ObjectType(['name' => 'Order',   'fields' => ['id' => Type::string()]]);
+
+        $configs = [
+            new EntityConfig('Product', ['id'], $product, resolvable: true),
+            new EntityConfig('Order',   ['id'], $order,   resolvable: false),
+        ];
+
+        $union = EntityUnionBuilder::build($configs);
+        $this->assertCount(1, $union->getTypes());
     }
 }

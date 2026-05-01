@@ -33,7 +33,7 @@ class FederatedSchemaPrinterTest extends TestCase
 
         $this->fedSchema = new FederatedSchema(
             $schema,
-            [new EntityConfig('Product', 'id', $this->productType)],
+            [new EntityConfig('Product', ['id'], $this->productType)],
         );
     }
 
@@ -78,5 +78,42 @@ class FederatedSchemaPrinterTest extends TestCase
     {
         $sdl = FederatedSchemaPrinter::printForService($this->fedSchema);
         $this->assertStringContainsString('type Product', $sdl);
+    }
+
+    public function test_sdl_includes_multiple_key_directives(): void
+    {
+        $product = new ObjectType([
+            'name'   => 'Product',
+            'fields' => ['id' => Type::string(), 'sku' => Type::string()],
+        ]);
+        $schema = new Schema([
+            'query' => new ObjectType(['name' => 'Query', 'fields' => ['product' => $product]]),
+        ]);
+        $fedSchema = new FederatedSchema(
+            $schema,
+            [new EntityConfig('Product', ['id', 'sku'], $product)],
+        );
+
+        $sdl = FederatedSchemaPrinter::printForService($fedSchema);
+        $this->assertStringContainsString('@key(fields: "id")', $sdl);
+        $this->assertStringContainsString('@key(fields: "sku")', $sdl);
+    }
+
+    public function test_sdl_includes_resolvable_false_on_non_resolvable_entity(): void
+    {
+        $product = new ObjectType([
+            'name'   => 'Product',
+            'fields' => ['id' => Type::string()],
+        ]);
+        $schema = new Schema([
+            'query' => new ObjectType(['name' => 'Query', 'fields' => ['product' => $product]]),
+        ]);
+        $fedSchema = new FederatedSchema(
+            $schema,
+            [new EntityConfig('Product', ['id'], $product, resolvable: false)],
+        );
+
+        $sdl = FederatedSchemaPrinter::printForService($fedSchema);
+        $this->assertStringContainsString('resolvable: false', $sdl);
     }
 }

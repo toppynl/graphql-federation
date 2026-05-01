@@ -94,4 +94,16 @@ class FederatedSchemaBuilderTest extends TestCase
         $this->assertCount(1, $fedSchema->entityConfigs);
         $this->assertSame('Product', $fedSchema->entityConfigs[0]->typeName);
     }
+
+    public function test_non_resolvable_entity_does_not_require_resolver(): void
+    {
+        $fedSchema = FederatedSchemaBuilder::from($this->baseSchema)
+            ->withEntityKey('Product', 'id', resolvable: false)
+            ->build();
+
+        // Should not throw; _service should contain @key(fields: "id", resolvable: false)
+        $result = GraphQL::executeQuery($fedSchema->schema, '{ _service { sdl } }');
+        $this->assertEmpty($result->errors);
+        $this->assertStringContainsString('resolvable: false', $result->data['_service']['sdl']);
+    }
 }
