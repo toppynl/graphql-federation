@@ -60,8 +60,13 @@ class FederatedSchemaPrinter
             }
 
             if ($skip) {
-                $depth += substr_count($line, '{') - substr_count($line, '}');
-                if ($depth <= 0 && (str_contains($line, '}') || preg_match('/^scalar\s/', $line))) {
+                $opens  = substr_count($line, '{');
+                $closes = substr_count($line, '}');
+                $depth += $opens - $closes;
+                // End skip when: a braced block closes (depth back to 0 with a closing brace),
+                // OR the excluded declaration was brace-less (scalar / union inline) so depth
+                // never went above 0 and the current line itself had no opening brace.
+                if ($depth <= 0 && ($closes > 0 || preg_match('/^scalar\s/', $line) || $opens === 0)) {
                     $skip = false;
                 }
                 continue;
