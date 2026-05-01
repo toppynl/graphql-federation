@@ -51,7 +51,15 @@ class AnyScalar extends CustomScalarType
             return $ast->value;
         }
 
-        if ($ast instanceof IntValueNode || $ast instanceof FloatValueNode || $ast instanceof StringValueNode || $ast instanceof EnumValueNode) {
+        if ($ast instanceof IntValueNode) {
+            return (int) $ast->value;
+        }
+
+        if ($ast instanceof FloatValueNode) {
+            return (float) $ast->value;
+        }
+
+        if ($ast instanceof StringValueNode || $ast instanceof EnumValueNode) {
             return $ast->value;
         }
 

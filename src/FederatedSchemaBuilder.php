@@ -76,8 +76,8 @@ class FederatedSchemaBuilder
         $entityUnion   = EntityUnionBuilder::build($entityConfigs);
 
         // We need a forward reference so the _service resolver can print the final schema.
-        // Use a reference variable updated after schema construction.
-        $fedSchemaRef = new \stdClass();
+        // Use a nullable reference variable updated after schema construction.
+        $fedSchemaHolder = null;
 
         $registry = $this->registry;
 
@@ -86,13 +86,13 @@ class FederatedSchemaBuilder
 
         $fields['_service'] = [
             'type'    => new NonNull($serviceType),
-            'resolve' => function () use ($fedSchemaRef): array {
-                return ['sdl' => FederatedSchemaPrinter::printForService($fedSchemaRef->value)];
+            'resolve' => function () use (&$fedSchemaHolder): array {
+                return ['sdl' => FederatedSchemaPrinter::printForService($fedSchemaHolder)];
             },
         ];
 
         $fields['_entities'] = [
-            'type' => new NonNull(new ListOfType($entityUnion)),
+            'type' => new NonNull(new ListOfType(Type::getNullableType($entityUnion))),
             'args' => [
                 'representations' => [
                     'type' => new NonNull(new ListOfType(new NonNull($any))),
@@ -125,8 +125,8 @@ class FederatedSchemaBuilder
         $builtSchema = new Schema($config);
         $fedSchema   = new FederatedSchema($builtSchema, $entityConfigs);
 
-        // Populate the forward reference so the _service resolver can access it
-        $fedSchemaRef->value = $fedSchema;
+        // Populate the reference variable so the _service resolver can access it
+        $fedSchemaHolder = $fedSchema;
 
         return $fedSchema;
     }
